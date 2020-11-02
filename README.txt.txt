@@ -1,0 +1,2 @@
+Please view the results and instructions are in the file road_damage_detector.ipynb.
+From there you can see the results of the current model, you can re-run the whole process, or choose to execute the Evaluation section or the section that produces the final sumission files for the two test cases only.
