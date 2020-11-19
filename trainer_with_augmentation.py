@@ -27,7 +27,7 @@ def sample_a_damage_of_type(dataset_dicts, damage_category_id):
     dataset_dicts = copy.deepcopy(dataset_dicts)
     while True:
         dataset_dict = random.sample(dataset_dicts, 1)[0]
-        if "annotations" in dataset_dict:
+        if "annotations" in dataset_dict and len(dataset_dict['annotations']) > 0:
             for obj in dataset_dict['annotations']:
                 category_id = obj['category_id']
                 if category_id == damage_category_id:
@@ -136,7 +136,7 @@ def train_transforms():
 
 
 class MyDatasetMapper:
-    def __init__(self, augs, all_locs, dataset_dicts_to_sample, for_vis=False, sample_probs=[0., 0., 0., 0.]):
+    def __init__(self, augs, all_locs, dataset_dicts_to_sample, for_vis=True, sample_probs={}):
         self.augmentations = augs
         self.all_locs = all_locs
         self.dataset_dicts_to_sample = dataset_dicts_to_sample
@@ -156,9 +156,9 @@ class MyDatasetMapper:
         imgh, imgw = image.shape[:2]
         utils.check_image_size(dataset_dict, image)
         transform = train_transforms()
-
+        country = dataset_dict['file_name'].split('/')[-1].split('_')[0]
         #Augment the image
-        for category_id, sample_prob in enumerate(self.sample_probs):
+        for category_id, sample_prob in enumerate(self.sample_probs[country]):
             if np.random.random() <= sample_prob:
                 damage_obj = sample_a_damage_of_type(self.dataset_dicts_to_sample, category_id)
                 if "annotations" not in dataset_dict:
@@ -169,7 +169,7 @@ class MyDatasetMapper:
 
                 # damage = damage_obj['damage_masked']
                 damage = damage_obj['damage']
-                # the plage to put
+                # the place to put
                 posx, posy = random.sample(self.all_locs, 1)[0]
                 dh, dw = damage.shape[:2]
                 bboxes = np.array([obj['bbox'] for obj in dataset_dict['annotations']])
@@ -215,7 +215,7 @@ class MyDatasetMapper:
                 dataset_dict["annotations"].append(damage_obj['annotation'])
 
         # TODO: Augmentation comes here
-        if "annotations" in dataset_dict:
+        if "annotations" in dataset_dict and len(dataset_dict['annotations']) > 0:
             bboxes = np.array([obj['bbox'] for obj in dataset_dict['annotations']])
             # Make sure the bounding boxes are not out  of ranges
             bw = bboxes[:, 2] - bboxes[:, 0]
@@ -289,7 +289,7 @@ class MyDatasetMapper:
 
 
 class MyTrainerWithAugmentation(DefaultTrainer):
-    sample_probs = [0.2, 0.2, 0., 0.4]
+    sample_probs = {'Czech':[0.2, 0.2, 0.0, 0.4], 'India':[0.3, 0.5, 0.2, 0.0], 'Japan': [0.0, 0.6, 0.3, 0.5]}
 
     @classmethod
     def build_evaluator(cls, cfg, dataset_name):
